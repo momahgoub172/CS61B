@@ -85,6 +85,13 @@ public class Model {
      * */
     public boolean emptySpaceExists() {
         // TODO: Task 2. Fill in this function.
+        for (int i = 0; i < board.size() ; i++) {
+            for (int j = 0; j < board.size() ; j++) {
+                if (board.tile(i, j) == null) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -93,10 +100,17 @@ public class Model {
      * Maximum valid value is given by this.MAX_PIECE. Note that
      * given a Tile object t, we get its value with t.value().
      */
-    public boolean maxTileExists() {
-        // TODO: Task 3. Fill in this function.
+    public  boolean maxTileExists() {
+        for (int i = 0; i < board.size() ; i += 1) {
+            for (int j = 0; j < board.size(); j += 1) {
+                if (board.tile(i, j) != null && board.tile(i, j).value() == Model.MAX_PIECE) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
+
 
     /**
      * Returns true if there are any valid moves on the board.
@@ -105,7 +119,20 @@ public class Model {
      * 2. There are two adjacent tiles with the same value.
      */
     public boolean atLeastOneMoveExists() {
-        // TODO: Fill in this function.
+        if (emptySpaceExists()) {
+            return true;
+        }
+        for (int y = 0; y < board.size(); y += 1) {
+            for (int x = 0; x < board.size() - 1; x += 1) {
+                if (board.tile(x, y).value() == board.tile(x + 1, y).value()) {
+                    return true;
+                }
+                if (y != board.size() - 1 && board.tile(x, y).value() == board.tile(x, y + 1).value()) {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 
@@ -124,11 +151,39 @@ public class Model {
      *    and the trailing tile does not.
      */
     public void moveTileUpAsFarAsPossible(int x, int y) {
+        // 1. Get the tile at (x,y)
+        // 2. If no tile exists, return
+        // 3. Find highest valid position by checking each square above
+        // 4. Move tile to that position with ONE move() call
+
         Tile currTile = board.tile(x, y);
+        if (currTile == null) {
+            return;
+        }
+
         int myValue = currTile.value();
         int targetY = y;
+        boolean canBeMerged = false;
 
-        // TODO: Tasks 5, 6, and 10. Fill in this function.
+        for (int i = y + 1; i < board.size(); i++) {
+            Tile nextTile = board.tile(x, i);
+            if (nextTile == null) {
+                targetY = i;
+            } else {
+                if (nextTile.value() == myValue && !nextTile.wasMerged()) {
+                    targetY = i;
+                    canBeMerged = true;
+                }
+                break;
+            }
+        }
+
+        if (targetY != y) {
+            board.move(x, targetY, currTile);
+            if (canBeMerged) {
+                score += currTile.value() * 2;
+            }
+        }
     }
 
     /** Handles the movements of the tilt in column x of the board
@@ -138,10 +193,22 @@ public class Model {
      * */
     public void tiltColumn(int x) {
         // TODO: Task 7. Fill in this function.
+        for (int j = 0; j < board.size(); j++) {
+            for (int i = 0; i < board.size(); i++) {
+                moveTileUpAsFarAsPossible(x, i);
+            }
+        }
+
     }
 
     public void tilt(Side side) {
         // TODO: Tasks 8 and 9. Fill in this function.
+        board.setViewingPerspective(side);
+        for (int i = 0; i < board.size(); i++) {
+            tiltColumn(i);
+        }
+        board.setViewingPerspective(Side.NORTH);
+
     }
 
     /** Tilts every column of the board toward SIDE.
